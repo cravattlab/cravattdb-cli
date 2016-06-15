@@ -1,0 +1,61 @@
+{
+    "experiment_types": [
+        { "name": "isotop" },
+        { "name": "redime" },
+        { "name": "mudpit" }
+    ],
+    "organisms": [
+        { "display_name": "human", "name": "homo sapiens", "tax_id": 9606 },
+        { "display_name": "mouse", "name": "mus musculus", "tax_id": 10090 },
+        { "display_name": "roundworm", "name": "caenorhabditis elegans", "tax_id": 6239 }
+    ],
+    "instruments": [
+        { "name": "Velos 3030" },
+        { "name": "Velos SR107" },
+        { "name": "Finnigan" },
+        { "name": "Elite" }
+    ],
+    "sample_types": [
+        { "name": "tissue", "description": "" },
+        { "name": "cell line", "description": "" }
+    ],
+    "cell_types": [
+        { "name": "HEK293T", "description": "" }
+    ],
+    "treatment_types": [
+        { "name": "in vitro", "description": "" },
+        { "name": "in situ", "description": "" },
+        { "name": "in vivo", "description": "" }
+    ],
+    "protemic_fractions": [
+        { "name": "membrane", "description": "" },
+        { "name": "soluble", "description": "" },
+        { "name": "secreted", "description": "" }
+    ],
+    "probes": [
+        {
+            "name": "DMSO",
+            "iupac_name": "(methylsulfinyl)methane",
+            "inchi": "InChI=1S/C2H6OS/c1-4(2)3/h1-2H3"
+        }, {
+            "name": "FP-biotin",
+            "iupac_name": "10-(ethoxyfluorophosphoryl)decyl (5-(5-(2-oxohexahydro-1H-thieno[3,4-d]imidazol-4-yl)pentanamido)pentyl)carbamate",
+            "inchi": "InChI=1S/C28H52FN4O6PS/c1-2-39-40(29,37)21-15-8-6-4-3-5-7-14-20-38-28(36)31-19-13-9-12-18-30-25(34)17-11-10-16-24-26-23(22-41-24)32-27(35)33-26/h23-24,26H,2-22H2,1H3,(H,30,34)(H,31,36)(H2,32,33,35)"
+        }, {
+            "name": "iodoacetamide alkyne",
+            "iupac_name": "N-ethynyl-2-iodoacetamide",
+            "inchi": "InChI=1S/C4H4INO/c1-2-6-4(7)3-5/h1H,3H2,(H,6,7)"
+        }
+    ],
+    "inhibitors": [
+        {
+            "name": "DMSO",
+            "iupac_name": "(methylsulfinyl)methane",
+            "inchi": "InChI=1S/C2H6OS/c1-4(2)3/h1-2H3"
+        }, {
+            "name": "FP-alkyne",
+            "iupac_name": "10-(ethoxyfluorophosphoryl)decyl hex-5-yn-1-ylcarbamate",
+            "inchi": "InChI=1S/C19H35FNO4P/c1-3-5-6-13-16-21-19(22)24-17-14-11-9-7-8-10-12-15-18-26(20,23)25-4-2/h1H,4-18H2,2H3,(H,21,22)"
+        }
+    ],
+}
