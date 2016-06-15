@@ -3,9 +3,10 @@
 from argparse import ArgumentParser
 from getpass import getpass
 from urllib.parse import urljoin
-from . import utils
+import pathlib
 import requests
 import json
+import utils
 
 
 parser = ArgumentParser(description='CLI tool for seeding data into CravattDB')
@@ -19,7 +20,8 @@ def main():
     password = getpass('Please enter your CravattDB Password:')
     auth_cookie = utils.login(args.url, args.email, password)
 
-    data = json.loads(args.data)
+    with open(args.data, 'r') as f:
+        data = json.loads(f.read())
 
     for key, value in data.items():
         # this is my singularization algo:
@@ -35,7 +37,7 @@ def main():
 
 
 def seed_item(url, endpoint, item, auth_cookie):
-    url = urljoin(url, 'api', endpoint)
+    url = urljoin(url, pathlib.Path('api', endpoint).to_posix())
     return requests.put(url, item, cookies=auth_cookie)
 
 

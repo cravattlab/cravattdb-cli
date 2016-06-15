@@ -3,7 +3,7 @@
 from argparse import ArgumentParser
 from urllib.parse import urljoin
 from getpass import getpass
-import cravattdb.scripts.utils as utils
+import utils
 import tempfile
 import shutil
 import requests
