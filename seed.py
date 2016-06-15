@@ -37,7 +37,7 @@ def main():
 
 
 def seed_item(url, endpoint, item, auth_cookie):
-    url = urljoin(url, pathlib.Path('api', endpoint).to_posix())
+    url = urljoin(url, pathlib.Path('api', endpoint).as_posix())
     return requests.put(url, item, cookies=auth_cookie)
 
 

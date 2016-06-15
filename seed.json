@@ -27,7 +27,7 @@
         { "name": "in situ", "description": "" },
         { "name": "in vivo", "description": "" }
     ],
-    "protemic_fractions": [
+    "proteomic_fractions": [
         { "name": "membrane", "description": "" },
         { "name": "soluble", "description": "" },
         { "name": "secreted", "description": "" }
