@@ -5,9 +5,9 @@
         { "name": "mudpit" }
     ],
     "organisms": [
-        { "display_name": "human", "name": "homo sapiens", "tax_id": 9606 },
-        { "display_name": "mouse", "name": "mus musculus", "tax_id": 10090 },
-        { "display_name": "roundworm", "name": "caenorhabditis elegans", "tax_id": 6239 }
+        { "name": "human", "scientific_name": "homo sapiens", "tax_id": 9606 },
+        { "name": "mouse", "scientific_name": "mus musculus", "tax_id": 10090 },
+        { "name": "roundworm", "scientific_name": "caenorhabditis elegans", "tax_id": 6239 }
     ],
     "instruments": [
         { "name": "Velos 3030" },
