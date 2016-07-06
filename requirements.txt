@@ -1,2 +1,4 @@
+et-xmlfile==1.0.1
+jdcal==1.2
 openpyxl==2.3.5
 requests==2.10.0
