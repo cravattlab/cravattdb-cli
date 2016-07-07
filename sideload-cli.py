@@ -72,8 +72,16 @@ def main():
 
     for item in datasets:
         for folder in item['paths']:
-            result = upload(args.url, auth_cookie, folder, item['data'])
-            print(result)
+            dataset_name = item['data']['name']
+
+            try:
+                result = upload(args.url, auth_cookie, folder, item['data'])
+                if result.status_code == requests.codes.ok:
+                    print('Successfully uploaded {} from {}'.format(dataset_name, str(folder)))
+                else:
+                    print('Failed uploading {} from {}'.format(dataset_name, str(folder)))
+            except:
+                print('Error during attempt to upload {} from {}'.format(dataset_name, str(folder)))
 
 
 def upload(url, auth_cookie, folder, data):
