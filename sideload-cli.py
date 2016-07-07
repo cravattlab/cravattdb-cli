@@ -177,7 +177,10 @@ def replace_names_with_ids(headers, datasets, columns):
         if header in HEADERS_TO_REPLACE:
             name_to_id_map = {item: get_item_id(header, item) for item in set(columns[index])}
             for j, item in enumerate(datasets):
+                # replace value with id
                 datasets[j]['data'][header] = name_to_id_map[item['data'][header]]
+                # add _id suffix to original header
+                datasets[j]['data'][header + '_id'] = datasets[j]['data'].pop(header)
 
     return datasets
 
