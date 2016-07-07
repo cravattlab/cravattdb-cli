@@ -15,6 +15,7 @@ import shutil
 import requests
 import pathlib
 import openpyxl
+import json
 
 parser = ArgumentParser(description='CLI tool for batch import of files into cravattdb.')
 parser.add_argument('url', help='URL of cravattdb instance.')
@@ -102,7 +103,7 @@ def upload(url, auth_cookie, folder, data):
         with open(zipped, 'rb') as f:
             result = requests.put(
                 url,
-                data,
+                {'data': json.dumps(data)},
                 files={'file': (f.name, f, 'application/octet-stream')},
                 cookies=auth_cookie
             )
