@@ -1,8 +1,14 @@
-"""Performs batch import of files into cravattdb through public API."""
+"""
+Performs batch import of files into cravattdb through public API.
+
+There is much room for optimization here but code clarity > performance.
+"""
 
 from argparse import ArgumentParser
 from urllib.parse import urljoin
 from getpass import getpass
+from collections import defaultdict
+from copy import deepcopy
 import utils
 import tempfile
 import shutil
@@ -58,6 +64,7 @@ def main():
 
     data_columns = [[item.value for item in column[2:]] for column in ws.columns[:last_data_index]]
     datasets = replace_names_with_ids(headers, datasets, data_columns)
+    datasets = flatten(datasets)
 
     password = getpass('Please enter your CravattDB Password:')
     auth_cookie = utils.login(args.url, args.email, password)
@@ -198,6 +205,63 @@ def get_item_id(endpoint, name):
         return item['id']
     else:
         return requests.put(url, {'name': name}).json()['id']
+
+
+def flatten(datasets):
+    """Package multiple headers into objects if they contain a . in their name."""
+    for item in datasets:
+        data = item['data']
+        temp_data = {}
+
+        for key in iter(data.keys()):
+            if '.' in key:
+                layers = key.split('.')
+                root = nested_dict()
+                # first element is first node
+                node = root[layers[0]]
+
+                # loop over everything but the first and last elements
+                for layer in layers[1:-1]:
+                    # middle elements are intermediate nodes
+                    node = node[layer]
+
+                # last element is the value that we've been nesting all this way to include
+                node[layers[-1]] = data[key]
+                temp_data = dict_merge(temp_data, dictify_nested(root))
+            else:
+                temp_data[key] = data[key]
+
+        item['data'] = temp_data
+
+
+def nested_dict():
+    """Create arbitratily nested dictionaries."""
+    return defaultdict(nested_dict)
+
+
+def dictify_nested(d):
+    """Convert nested defaultdict to dict."""
+    for k, v in d.items():
+        if isinstance(v, dict):
+            d[k] = dictify_nested(v)
+
+    return dict(d)
+
+
+def dict_merge(a, b):
+    """Recursively merge two dicts.
+
+    Lifted from: https://www.xormedia.com/recursively-merge-dictionaries-in-python/
+    """
+    if not isinstance(b, dict):
+        return b
+    result = deepcopy(a)
+    for k, v in b.items():
+        if k in result and isinstance(result[k], dict):
+                result[k] = dict_merge(result[k], v)
+        else:
+            result[k] = deepcopy(v)
+    return result
 
 
 def _generate_whitelist(dta_name):
