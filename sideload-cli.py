@@ -85,7 +85,7 @@ def upload(url, auth_cookie, folder, data):
 
     # create temp directory into which to copy whitelisted and corrected files
     # context manager ensures that all of this will be deleted
-    with tempfile.TemporaryDirectory as tmpdir:
+    with tempfile.TemporaryDirectory() as tmpdir:
         # separate folder within the temp folder which will contain data
         tmp_path = pathlib.Path(tmpdir, dataset_name)
 
