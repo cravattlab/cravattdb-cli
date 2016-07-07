@@ -64,7 +64,7 @@ def main():
 
     data_columns = [[item.value for item in column[2:]] for column in ws.columns[:last_data_index]]
     datasets = replace_names_with_ids(headers, datasets, data_columns)
-    datasets = flatten(datasets)
+    flatten(datasets)
 
     password = getpass('Please enter your CravattDB Password:')
     auth_cookie = utils.login(args.url, args.email, password)
