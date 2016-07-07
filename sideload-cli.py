@@ -195,12 +195,13 @@ def replace_names_with_ids(headers, datasets, columns):
     """Replace string names with numeric ids which the API can consume directly."""
     for index, header in enumerate(headers):
         if header in HEADERS_TO_REPLACE:
-            name_to_id_map = {item: get_item_id(header, item) for item in set(columns[index])}
+            name_to_id_map = {item: get_item_id(header, item) for item in set(columns[index]) if item}
             for j, item in enumerate(datasets):
-                # replace value with id
-                datasets[j]['data'][header] = name_to_id_map[item['data'][header]]
-                # add _id suffix to original header
-                datasets[j]['data'][header + '_id'] = datasets[j]['data'].pop(header)
+                if datasets[j]['data'][header]:
+                    # replace value with id
+                    datasets[j]['data'][header] = name_to_id_map[item['data'][header]]
+                    # add _id suffix to original header
+                    datasets[j]['data'][header + '_id'] = datasets[j]['data'].pop(header)
 
     return datasets
 
