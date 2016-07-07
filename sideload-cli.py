@@ -71,15 +71,26 @@ def main():
     auth_cookie = utils.login(args.url, args.email, password)
 
     for item in datasets:
+        replicate_of = None
+
         for folder in item['paths']:
             dataset_name = item['data']['name']
 
             try:
+                if replicate_of:
+                    item['data']['replicate_of'] = replicate_of
+
                 result = upload(args.url, auth_cookie, folder, item['data'])
+
+                if not replicate_of:
+                    replicate_of = result.json()['id']
+
                 if result.status_code == requests.codes.ok:
                     print('Successfully uploaded {} from {}'.format(dataset_name, str(folder)))
                 else:
                     print('Failed uploading {} from {}'.format(dataset_name, str(folder)))
+            except (KeyboardInterrupt, SystemExit):
+                raise
             except:
                 print('Error during attempt to upload {} from {}'.format(dataset_name, str(folder)))
 
@@ -240,7 +251,7 @@ def flatten(datasets):
                 # last element is the value that we've been nesting all this way to include
                 node[layers[-1]] = data[key]
                 temp_data = dict_merge(temp_data, dictify_nested(root))
-            else:
+            elif data[key]:
                 temp_data[key] = data[key]
 
         item['data'] = temp_data
