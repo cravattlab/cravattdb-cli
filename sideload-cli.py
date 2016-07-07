@@ -199,7 +199,7 @@ def get_item_id(endpoint, name):
     # unwrap pluralized result
     contents = next(iter(result.values()))
     # find first instance of item which has matching name
-    item = next((x for x in contents if x['name'] == name), None)
+    item = next((x for x in contents if str(x['name']) == str(name)), None)
 
     if item:
         return item['id']
