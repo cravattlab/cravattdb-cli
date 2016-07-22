@@ -7,7 +7,7 @@ There is much room for optimization here but code clarity > performance.
 from argparse import ArgumentParser
 from urllib.parse import urljoin
 from getpass import getpass
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from copy import deepcopy
 import utils
 import tempfile
@@ -16,11 +16,12 @@ import requests
 import pathlib
 import openpyxl
 import json
+import readline
 
 parser = ArgumentParser(description='CLI tool for batch import of files into cravattdb.')
 parser.add_argument('url', help='URL of cravattdb instance.')
 parser.add_argument('email', help='Email of the user for uploading data.')
-parser.add_argument('data_file', help='Path to data file pointing to dataset paths. Use sideload-template.xlsx.')
+parser.add_argument('--data_file', help='Path to data file pointing to dataset paths. Use sideload-template.xlsx.')
 args = parser.parse_args()
 
 
@@ -30,45 +31,116 @@ DEFAULT_DTA_PATH = {
     'L': 'dta'
 }
 
-# items that should have names replaced with numeric ids
-HEADERS_TO_REPLACE = [
-    'organism',
-    'experiment_type',
-    'instrument',
-    'treatment_type',
-    'proteomic_fraction',
-    'sample_type',
-    'cell_type',
-    'probe',
-    'inhibitor'
-]
-
 
 def main():
     """Preprocess data."""
+    password = getpass('Please enter your CravattDB Password:')
+    auth_cookie = utils.login(args.url, args.email, password)
+
+    # if data file arg is set then we get info from it
+    # otherwise we get info from user prompts
+    if args.data_file:
+        process_bulk(auth_cookie)
+    else:
+        process_single(auth_cookie)
+
+
+def process_single(auth_cookie):
+    """Get dataset info from user input on command-line."""
+    dataset = OrderedDict()
+
+    meta = [
+        ('name', 'Dataset name: '),
+        ('description', 'Description: '),
+        ('date', 'Date: '),
+        ('organism_id', 'Organism: '),
+        ('experiment_type_id', 'Experiment Type: '),
+        ('instrument_id', 'Instrument: '),
+        ('proteomic_fraction_id', 'Proteomic Fraction (soluble ...): '),
+        ('sample_type_id', 'Sample Type (cell line, tissue ...): '),
+        ('cell_type_id', 'Cell Type: '),
+        ('quantification_numerator', 'Quantification Numerator (H/L): ')
+    ]
+
+    treatment_info = [
+        ('id', 'Name: '),
+        ('description', 'Description of treatment: '),
+        ('method', 'Method (in situ ...): '),
+        ('concentration', 'Concentration (micromolar): '),
+        ('time', 'Treatment Time (hours): ')
+    ]
+
+    fractions = ('light', 'heavy')
+    treatment_entities = ('inhibitor', 'probe')
+
+    dataset.update(collect_info(meta))
+
+    for fraction in fractions:
+        print_wrapped('Collecting info on {} fraction'.format(fraction))
+        for entity in treatment_entities:
+            print('\n* Please enter any information on treatment with {}.\n'.format(entity))
+            for item in treatment_info:
+                dataset['treatment.{}.{}.{}'.format(fraction, entity, item[0])] = input(item[1])
+
+    # converting to the same format that we use when we have multiple datasets
+    headers = list(dataset.keys())
+    data_columns = [[x] for x in dataset.values()]
+
+    print_wrapped('Enter path to dta folder and dta folders of any replicates. When done enter nothing')
+
+    paths = []
+    while True:
+        path = input('Path to dta folder: ')
+        if path:
+            paths.append(path)
+        else:
+            break
+
+    dataset['paths'] = paths
+    datasets = replace_names_with_ids(headers, [{'data': dataset}], data_columns)
+    datasets = remove_empty_values(datasets)
+    flatten(datasets)
+
+    process_datasets(auth_cookie, datasets)
+
+
+def collect_info(info):
+    return {item[0]: input(item[1]) for item in info}
+
+
+def print_wrapped(message):
+    wrapper = '-' * shutil.get_terminal_size().columns
+    print('', wrapper, message, wrapper, sep='\n')
+
+
+def process_bulk(auth_cookie):
+    """Process data from excel worksheets."""
     datasets = []
 
     ws = openpyxl.load_workbook(args.data_file, read_only=True, data_only=True).active
     rows = [row for row in ws.rows]
-    headers = [row.value for row in rows[1]]
+    headers = [row.value for row in rows[2]]
     # all headers up to 'path' represent data, the rest are paths
     last_data_index = headers.index('path')
     headers = headers[:last_data_index]
 
-    # first two rows are headers
-    for line in rows[2:]:
+    # first three rows are headers
+    for line in rows[3:]:
         line = [item.value for item in line]
         datasets.append({
             'data': dict(zip(headers, line[:len(headers)])),
             'paths': list(filter(None, line[len(headers):]))
         })
 
-    data_columns = [[item.value for item in column[2:]] for column in ws.columns[:last_data_index]]
+    data_columns = [[item.value for item in column[3:]] for column in ws.columns[:last_data_index]]
     datasets = replace_names_with_ids(headers, datasets, data_columns)
+    datasets = remove_empty_values(datasets)
     flatten(datasets)
 
-    password = getpass('Please enter your CravattDB Password:')
-    auth_cookie = utils.login(args.url, args.email, password)
+    process_datasets(auth_cookie, datasets)
+
+
+def process_datasets(auth_cookie, datasets):
 
     for item in datasets:
         replicate_of = None
@@ -194,14 +266,15 @@ def fix_broken_links(folder_path, current_dta_name, correct_dta_name):
 def replace_names_with_ids(headers, datasets, columns):
     """Replace string names with numeric ids which the API can consume directly."""
     for index, header in enumerate(headers):
-        if header in HEADERS_TO_REPLACE:
-            name_to_id_map = {item: get_item_id(header, item) for item in set(columns[index]) if item}
+        if header.endswith('id'):
+            endpoint = header[:-2].rstrip('._').split('.')[-1]
+            name_to_id_map = {
+                item: get_item_id(endpoint, item) for item in set(columns[index]) if item and not item.isnumeric()
+            }
             for j, item in enumerate(datasets):
                 if datasets[j]['data'][header]:
                     # replace value with id
                     datasets[j]['data'][header] = name_to_id_map[item['data'][header]]
-                    # add _id suffix to original header
-                    datasets[j]['data'][header + '_id'] = datasets[j]['data'].pop(header)
 
     return datasets
 
@@ -256,6 +329,11 @@ def flatten(datasets):
                 temp_data[key] = data[key]
 
         item['data'] = temp_data
+
+
+def remove_empty_values(d):
+    """Remove empty values from dictionary."""
+    return dict((k, v) for k, v in d.items() if v)
 
 
 def nested_dict():
