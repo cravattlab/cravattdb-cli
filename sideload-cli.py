@@ -16,7 +16,6 @@ import requests
 import pathlib
 import openpyxl
 import json
-import readline
 
 parser = ArgumentParser(description='CLI tool for batch import of files into cravattdb.')
 parser.add_argument('url', help='URL of cravattdb instance.')
@@ -96,9 +95,9 @@ def process_single(auth_cookie):
         else:
             break
 
-    dataset['paths'] = paths
     datasets = replace_names_with_ids(headers, [{'data': dataset}], data_columns)
-    datasets = remove_empty_values(datasets)
+    dataset['paths'] = paths
+    datasets['data'] = remove_empty_values(datasets['data'])
     flatten(datasets)
 
     process_datasets(auth_cookie, datasets)
@@ -134,7 +133,7 @@ def process_bulk(auth_cookie):
 
     data_columns = [[item.value for item in column[3:]] for column in ws.columns[:last_data_index]]
     datasets = replace_names_with_ids(headers, datasets, data_columns)
-    datasets = remove_empty_values(datasets)
+    datasets['data'] = remove_empty_values(datasets['data'])
     flatten(datasets)
 
     process_datasets(auth_cookie, datasets)
