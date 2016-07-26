@@ -69,17 +69,21 @@ def process_single(auth_cookie):
         ('time', 'Treatment Time (hours): ')
     ]
 
-    fractions = ('light', 'heavy')
+    fractions = (
+        ('L', 'light'),
+        ('H', 'heavy')
+    )
+
     treatment_entities = ('inhibitor', 'probe')
 
     dataset.update(collect_info(meta))
 
     for fraction in fractions:
-        print_wrapped('Collecting info on {} fraction'.format(fraction))
+        print_wrapped('Collecting info on {} fraction'.format(fraction[1]))
         for entity in treatment_entities:
             print('\n* Please enter any information on treatment with {}.\n'.format(entity))
             for item in treatment_info:
-                dataset['treatment.{}.{}.{}'.format(fraction, entity, item[0])] = input(item[1])
+                dataset['treatment.{}.{}.{}'.format(fraction[0], entity, item[0])] = input(item[1])
 
     # converting to the same format that we use when we have multiple datasets
     headers = list(dataset.keys())
@@ -95,10 +99,11 @@ def process_single(auth_cookie):
         else:
             break
 
-    datasets = replace_names_with_ids(headers, [{'data': dataset}], data_columns)
-    dataset['paths'] = paths
-    datasets['data'] = remove_empty_values(datasets['data'])
-    flatten(datasets)
+    datasets = replace_names_with_ids(headers, [{'data': dataset, 'paths': paths}], data_columns)
+    datasets = [{
+        'data': flatten(remove_empty_values(d['data'])),
+        'paths': d['paths']
+    } for d in datasets]
 
     process_datasets(auth_cookie, datasets)
 
@@ -133,8 +138,10 @@ def process_bulk(auth_cookie):
 
     data_columns = [[item.value for item in column[3:]] for column in ws.columns[:last_data_index]]
     datasets = replace_names_with_ids(headers, datasets, data_columns)
-    datasets['data'] = remove_empty_values(datasets['data'])
-    flatten(datasets)
+    datasets = [{
+        'data': flatten(remove_empty_values(d['data'])),
+        'paths': d['paths']
+    } for d in datasets]
 
     process_datasets(auth_cookie, datasets)
 
@@ -184,17 +191,17 @@ def upload(url, auth_cookie, folder, data):
         # point to the dta folder
         cleaned_path = clean_copy(folder_path.parents[0], tmp_path, dta_name, data)
 
-        zipped = shutil.make_archive(
+        zipped = pathlib.Path(shutil.make_archive(
             str(pathlib.Path(tmpdir, dataset_name)),
             'zip',
             str(cleaned_path)
-        )
+        ))
 
-        with open(zipped, 'rb') as f:
+        with zipped.open('rb') as f:
             result = requests.put(
                 url,
                 {'data': json.dumps(data)},
-                files={'file': (f.name, f, 'application/octet-stream')},
+                files={'file': (zipped.name, f, 'application/octet-stream')},
                 cookies=auth_cookie
             )
 
@@ -303,29 +310,27 @@ def get_item_id(endpoint, name):
         return requests.put(url, {'name': name}).json()['id']
 
 
-def flatten(datasets):
+def flatten(data):
     """Package multiple headers into objects if they contain a . in their name."""
-    for item in datasets:
-        data = item['data']
-        temp_data = {}
+    temp_data = {}
 
-        for key in iter(data.keys()):
-            if '.' in key:
-                layers = key.split('.')
-                root = nested_dict()
-                # first element is first node
-                node = root[layers[0]]
+    for key in iter(data.keys()):
+        if '.' in key:
+            layers = key.split('.')
+            root = nested_dict()
+            # first element is first node
+            node = root[layers[0]]
 
-                # loop over everything but the first and last elements
-                for layer in layers[1:-1]:
-                    # middle elements are intermediate nodes
-                    node = node[layer]
+            # loop over everything but the first and last elements
+            for layer in layers[1:-1]:
+                # middle elements are intermediate nodes
+                node = node[layer]
 
-                # last element is the value that we've been nesting all this way to include
-                node[layers[-1]] = data[key]
-                temp_data = dict_merge(temp_data, dictify_nested(root))
-            elif data[key]:
-                temp_data[key] = data[key]
+            # last element is the value that we've been nesting all this way to include
+            node[layers[-1]] = data[key]
+            temp_data = dict_merge(temp_data, dictify_nested(root))
+        elif data[key]:
+            temp_data[key] = data[key]
 
         item['data'] = temp_data
 
