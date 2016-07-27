@@ -22,11 +22,6 @@
     "cell_types": [
         { "name": "HEK293T", "description": "" }
     ],
-    "treatment_types": [
-        { "name": "in vitro", "description": "" },
-        { "name": "in situ", "description": "" },
-        { "name": "in vivo", "description": "" }
-    ],
     "proteomic_fractions": [
         { "name": "membrane", "description": "" },
         { "name": "soluble", "description": "" },
