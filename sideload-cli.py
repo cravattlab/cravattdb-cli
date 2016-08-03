@@ -225,7 +225,7 @@ def clean_copy(folder_path, temp_dest, dta_name, data):
     rename_folders(
         dest_path,
         dta_name,
-        DEFAULT_DTA_PATH[data['ratio_numerator']],
+        DEFAULT_DTA_PATH[data['quantification_numerator']],
         whitelist
     )
 
@@ -332,7 +332,7 @@ def flatten(data):
         elif data[key]:
             temp_data[key] = data[key]
 
-        item['data'] = temp_data
+    return temp_data
 
 
 def remove_empty_values(d):
