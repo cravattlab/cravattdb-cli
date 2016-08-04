@@ -200,7 +200,7 @@ def upload(url, auth_cookie, folder, data):
         with zipped.open('rb') as f:
             result = requests.put(
                 url,
-                {'data': json.dumps(data)},
+                {'data': json.dumps(data, default=utils.json_serial)},
                 files={'file': (zipped.name, f, 'application/octet-stream')},
                 cookies=auth_cookie
             )

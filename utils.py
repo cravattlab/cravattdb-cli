@@ -1,6 +1,7 @@
 """Holds various utility methods needed by CLI scripts."""
 
 from urllib.parse import urljoin
+from datetime import datetime
 import requests
 
 
@@ -21,3 +22,14 @@ def login(url, email, password):
     )
 
     return login_req.cookies
+
+
+def json_serial(obj):
+    """JSON serializer for objects not serializable by default json code.
+
+    http://stackoverflow.com/a/22238613/383744
+    """
+    if isinstance(obj, datetime):
+        serial = obj.isoformat()
+        return serial
+    raise TypeError("Type not serializable")
